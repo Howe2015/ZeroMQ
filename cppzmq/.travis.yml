@@ -1,0 +1,55 @@
+# Travis CI script
+
+language: cpp
+
+os:
+- linux
+#- osx
+
+dist: trusty
+
+cache: ccache
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+
+env:
+  matrix:
+#    - BUILD_TYPE=cmake DRAFT=enabled
+    - BUILD_TYPE=cmake ZMQ_VERSION=4.2.5
+    - BUILD_TYPE=cmake ZMQ_VERSION=4.2.0
+
+matrix:
+  include:
+  # - env: BUILD_TYPE=cmake DO_CLANG_FORMAT_CHECK=1 CLANG_FORMAT=/usr/local/clang-5.0.0/bin/clang-format
+    # os: linux
+    # addons:
+    # apt:
+      # sources:
+        # - llvm-toolchain-trusty-5.0
+      # packages:
+        # - clang-5.0
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7" BUILD_TYPE=cmake ZMQ_VERSION=4.2.5 DRAFT=1
+
+sudo: required
+
+before_install:
+  - pip install --user cpp-coveralls
+  
+# Build and check this project according to the BUILD_TYPE
+script:     
+  - eval "${MATRIX_EVAL}"
+  - ./ci_build.sh
+
+after_success:
+  - coveralls --root . -E ".*external.*" -E ".*CMakeFiles.*" -E ".*tests/" -E ".*demo/" -E ".*libzmq/"
